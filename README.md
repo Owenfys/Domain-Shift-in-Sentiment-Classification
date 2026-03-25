@@ -43,6 +43,28 @@ python run_classical.py --experiment 2   # Cross-domain: IMDB → Financial Phra
 python run_classical.py --experiment 3   # Fine-tuned: FPB → FPB
 ```
 
+### Neural experiments (LSTM + BERT)
+
+```bash
+# Run all neural experiments (Exp1/2/3), 3 seeds by default
+python run_neural.py
+
+# Run only one experiment
+python run_neural.py --experiment 2
+
+# Run faster sanity pass (LSTM only)
+python run_neural.py --experiment 1 --skip-bert
+
+# Optional unified entrypoint
+python run_all.py --track all
+```
+
+Optional GloVe path (plain text vectors):
+
+```bash
+python run_neural.py --glove-path "/path/to/glove.6B.100d.txt"
+```
+
 ## Experiments
 
 1. **Experiment 1 — In-Domain (IMDB → IMDB):** Baseline performance on general sentiment.
@@ -64,3 +86,25 @@ After running, `outputs/` will contain:
 - `summary_all_experiments.csv` — combined F1 comparison + domain shift drop
 - `summary_performance_drop.png` — bar chart of in-domain vs cross-domain F1
 - `summary_finetune_improvement.png` — bar chart of cross-domain vs fine-tuned F1
+
+Neural outputs are written under `outputs/neural/`:
+- `exp1|exp2|exp3/records.json` — unified per-seed records
+- `exp1|exp2|exp3/raw_metrics_by_seed.csv`
+- `exp1|exp2|exp3/summary_mean_std.csv`
+- `all_records.json`, `all_summary_mean_std.csv`
+- `best_bert_hparams.json` (selected from Exp1 val set)
+
+## Reproducibility and fairness constraints
+
+- All model families use deterministic `train/val/test` splits.
+- Validation set is used for hyperparameter search and early stopping.
+- Test set is evaluated only once per run.
+- Exp2 (`IMDB→FPB`) primary metric is `macro-F1`; accuracy is secondary.
+- Neural runs use fixed seeds (default: 42, 52, 62) and report `mean ± std`.
+- LSTM vocabulary is built from train split only; OOV rates are logged.
+
+## Resource strategy and fallback
+
+- BERT hyperparameter search is performed on Exp1, then best config is reused for Exp2/Exp3.
+- If BERT download fails (network/proxy), run `--skip-bert` first to validate the full LSTM pipeline.
+- If GloVe file is unavailable, LSTM falls back to random initialization and marks fallback in output config.

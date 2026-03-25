@@ -1,0 +1,32 @@
+Neural Training Log
+===================
+
+This file is auto-appended by `run_and_log_neural.py`.
+Each run writes:
+1) command + params before training
+2) summary metrics after training
+
+================================================================================
+RUN_ID: run_20260323_154206_c566cdb4
+START_TIME: 2026-03-23T15:42:06
+COMMAND: python run_neural.py --experiment 3 --seeds 42
+PARAMS: {"experiment": 3, "seeds": [42], "glove_path": "", "skip_bert": false}
+STATUS: RUNNING
+RESULTS: PENDING
+================================================================================
+RUN_ID: run_20260323_154206_c566cdb4
+STATUS: DONE
+RESULTS: {"return_code": 0, "end_time": "2026-03-23T15:45:41", "summary_rows": [{"experiment": "Exp3", "domain_setup": "FPB->FPB", "model": "BERT_base", "accuracy_mean": "0.92", "accuracy_std": "", "precision_mean": "0.9808", "precision_std": "", "recall_mean": "0.8947", "recall_std": "", "f1_mean": "0.9358", "f1_std": "", "macro_f1_mean": "0.9149", "macro_f1_std": ""}, {"experiment": "Exp3", "domain_setup": "FPB->FPB", "model": "LSTM_GloVe", "accuracy_mean": "0.6571", "accuracy_std": "", "precision_mean": "0.657", "precision_std": "", "recall_mean": "0.9912", "recall_std": "", "f1_mean": "0.7902", "f1_std": "", "macro_f1_mean": "0.7902", "macro_f1_std": ""}]}
+--------------------------------------------------------------------------------
+================================================================================
+RUN_ID: run_20260323_154620_85d002e4
+START_TIME: 2026-03-23T15:46:20
+COMMAND: python run_neural.py --experiment 3 --seeds 42 52 62
+PARAMS: {"experiment": 3, "seeds": [42, 52, 62], "glove_path": "", "skip_bert": false}
+STATUS: RUNNING
+RESULTS: PENDING
+================================================================================
+RUN_ID: run_20260323_154620_85d002e4
+STATUS: DONE
+RESULTS: {"return_code": 0, "end_time": "2026-03-23T15:56:33", "summary_rows": [{"experiment": "Exp3", "domain_setup": "FPB->FPB", "model": "BERT_base", "accuracy_mean": "0.941", "accuracy_std": "0.0231", "precision_mean": "0.9701", "precision_std": "0.0129", "recall_mean": "0.9386", "recall_std": "0.0402", "f1_mean": "0.9537", "f1_std": "0.019", "macro_f1_mean": "0.9361", "macro_f1_std": "0.0241"}, {"experiment": "Exp3", "domain_setup": "FPB->FPB", "model": "LSTM_GloVe", "accuracy_mean": "0.6629", "accuracy_std": "0.0057", "precision_mean": "0.6608", "precision_std": "0.0039", "recall_mean": "0.9912", "recall_std": "0.0", "f1_mean": "0.793", "f1_std": "0.0028", "macro_f1_mean": "0.793", "macro_f1_std": "0.0028"}]}
+--------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ models.py
 Classical sentiment classifiers: Naive Bayes and Logistic Regression.
 Each function returns a fitted model ready for prediction.
 """
+from __future__ import annotations
 
 from sklearn.naive_bayes import MultinomialNB, ComplementNB
 from sklearn.linear_model import LogisticRegression

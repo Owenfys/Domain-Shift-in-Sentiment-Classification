@@ -1,0 +1,101 @@
+NLP Project Neural Experiment Plan
+==================================
+
+目标
+----
+在不破坏现有 classical 流程的前提下，新增两条神经模型实验链路：
+1) PyTorch LSTM + 预训练 GloVe
+2) HuggingFace BERT (bert-base-uncased) 微调 + 超参数搜索
+
+并复用当前三组实验定义：
+- Exp1: IMDB -> IMDB
+- Exp2: IMDB -> FPB
+- Exp3: FPB -> FPB
+
+
+文件级改造计划
+--------------
+1. 扩展数据层（兼容现有接口）
+   - 文件：data_loader.py
+   - 新增神经模型友好加载函数（可保留原文本给 tokenizer）
+   - 返回结构保持一致：X_train/X_test/y_train/y_test
+
+2. 新增神经特征管道模块
+   - 新文件：neural_features.py
+   - LSTM：词表构建、序列化、padding、GloVe embedding matrix、DataLoader
+   - BERT：tokenizer 编码、Dataset 封装
+
+3. 新增神经模型模块
+   - 新文件：neural_models.py
+   - LSTMClassifier(nn.Module) + train/predict
+   - BERT 微调 + 超参数搜索（lr/batch_size/epochs）+ best checkpoint 选择
+
+4. 评估模块增强
+   - 文件：evaluate.py
+   - 保持现有 compute_metrics 等接口
+   - 新增神经实验对比汇总与 best hparams 记录支持
+
+5. 新增神经实验主入口
+   - 新文件：run_neural.py
+   - 结构镜像 run_classical.py，包含 experiment_1/2/3
+   - 每个实验跑 LSTM_GloVe 与 BERT_base_best
+   - 输出到 outputs/neural/（json/csv/cm/png/hparams）
+
+6. 新增统一总入口（推荐）
+   - 新文件：run_all.py
+   - 参数：--track classical|neural|all，支持按实验号过滤
+
+7. 文档与依赖更新
+   - 文件：requirements.txt, README.md
+   - 补齐依赖、补充运行命令、GloVe 准备说明、BERT 调参范围、训练资源说明
+
+
+默认超参数（初版）
+------------------
+LSTM + GloVe:
+- embedding_dim=100 (GloVe 6B 100d)
+- hidden_dim=128
+- num_layers=1
+- bidirectional=True
+- dropout=0.3
+- max_len=256
+- batch_size=64
+- epochs=5
+- lr=1e-3
+
+BERT (bert-base-uncased):
+- learning_rate: [2e-5, 3e-5, 5e-5]
+- batch_size: [8, 16]
+- num_train_epochs: [2, 3, 4]
+- early_stopping: patience=1~2 (按验证集 F1)
+
+
+调用关系（目标）
+----------------
+run_neural.py
+  -> data_loader.py
+  -> neural_features.py
+  -> neural_models.py
+  -> evaluate.py
+  -> outputs/neural/
+
+run_all.py
+  -> run_classical.py
+  -> run_neural.py
+
+
+执行顺序
+--------
+1) 新增 neural_features.py 与 neural_models.py
+2) 实现 run_neural.py 三组实验与输出
+3) 轻改 evaluate.py 兼容神经结果汇总
+4) 新增 run_all.py（统一入口）
+5) 更新 README.md 与 requirements.txt
+6) 在 ai 环境先做 Exp1 sanity check，再跑全量实验
+
+
+备注
+----
+当前终端日志里曾出现：
+"None of PyTorch, TensorFlow >= 2.0, or Flax have been found..."
+后续执行前需再次在 ai 环境确认 torch 与 transformers 可用，避免 Trainer 报错。

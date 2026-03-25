@@ -4,6 +4,7 @@ features.py
 TF-IDF feature extraction with configurable parameters.
 Provides fit/transform interfaces for in-domain and cross-domain experiments.
 """
+from __future__ import annotations
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 import scipy.sparse as sp

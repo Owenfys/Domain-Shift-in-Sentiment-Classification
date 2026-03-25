@@ -3,6 +3,7 @@ evaluate.py
 -----------
 Evaluation utilities: metrics, confusion matrices, comparison tables, and plots.
 """
+from __future__ import annotations
 
 import numpy as np
 import pandas as pd
@@ -180,3 +181,42 @@ def plot_finetune_improvement(
         print(f"[evaluate] Saved fine-tune improvement plot → {save_path}")
     plt.close(fig)
     return fig
+
+
+def records_to_dataframe(records: list[dict]) -> pd.DataFrame:
+    """
+    Convert unified records to a flat metrics DataFrame.
+    """
+    rows = []
+    for r in records:
+        m = r.get("metrics", {})
+        rows.append(
+            {
+                "experiment": r.get("experiment"),
+                "domain_setup": r.get("domain_setup"),
+                "model": r.get("model"),
+                "seed": r.get("seed"),
+                "accuracy": m.get("accuracy"),
+                "precision": m.get("precision"),
+                "recall": m.get("recall"),
+                "f1": m.get("f1"),
+                "macro_f1": m.get("macro_f1"),
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def summarize_records_mean_std(records: list[dict]) -> pd.DataFrame:
+    """
+    Summarize multi-seed records as mean±std by experiment/domain/model.
+    """
+    df = records_to_dataframe(records)
+    if df.empty:
+        return df
+    metric_cols = ["accuracy", "precision", "recall", "f1", "macro_f1"]
+    grouped = df.groupby(["experiment", "domain_setup", "model"], as_index=False)[metric_cols].agg(["mean", "std"])
+    grouped.columns = [
+        "_".join(c).strip("_") if isinstance(c, tuple) else c
+        for c in grouped.columns
+    ]
+    return grouped.round(4)

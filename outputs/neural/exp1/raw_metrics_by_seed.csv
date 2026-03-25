@@ -1,0 +1,2 @@
+experiment,domain_setup,model,seed,accuracy,precision,recall,f1,macro_f1
+Exp1,IMDB->IMDB,LSTM_GloVe,42,0.8996,0.9012048192771084,0.8976,0.8993987975951904,0.8993987975951904

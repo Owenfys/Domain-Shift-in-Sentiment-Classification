@@ -23,6 +23,66 @@ def clean_text(text: str) -> str:
     return text
 
 
+def split_train_val_test(
+    texts: list[str],
+    labels: list[int],
+    test_size: float = 0.2,
+    val_size: float = 0.1,
+    random_state: int = 42,
+) -> dict:
+    """
+    Deterministic stratified split into train/val/test.
+
+    Parameters
+    ----------
+    test_size : float
+        Fraction of total data reserved for test split.
+    val_size : float
+        Fraction of total data reserved for validation split.
+    """
+    if test_size <= 0 or val_size < 0 or (test_size + val_size) >= 1:
+        raise ValueError("Require 0 < test_size and 0 <= val_size and test_size + val_size < 1.")
+
+    if len(texts) != len(labels):
+        raise ValueError("texts and labels must have equal length.")
+
+    X_trainval, X_test, y_trainval, y_test = train_test_split(
+        texts,
+        labels,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=labels,
+    )
+
+    if val_size == 0:
+        return {
+            "X_train": X_trainval,
+            "X_val": [],
+            "X_test": X_test,
+            "y_train": y_trainval,
+            "y_val": [],
+            "y_test": y_test,
+        }
+
+    # Convert global val fraction to fraction of the remaining train+val partition.
+    val_relative = val_size / (1.0 - test_size)
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_trainval,
+        y_trainval,
+        test_size=val_relative,
+        random_state=random_state,
+        stratify=y_trainval,
+    )
+    return {
+        "X_train": X_train,
+        "X_val": X_val,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_val": y_val,
+        "y_test": y_test,
+    }
+
+
 # ── IMDB ──────────────────────────────────────────────────────────────────────
 
 def load_imdb(test_size: float = 0.2, random_state: int = 42, clean: bool = True) -> dict:
@@ -169,6 +229,71 @@ def load_all_data(clean: bool = True, random_state: int = 42) -> dict:
     imdb = load_imdb(clean=clean, random_state=random_state)
     fpb = load_financial_phrasebank(clean=clean, random_state=random_state)
     return {"imdb": imdb, "fpb": fpb}
+
+
+def load_imdb_with_val(
+    random_state: int = 42,
+    clean: bool = False,
+    val_size: float = 0.1,
+) -> dict:
+    """
+    Load IMDB with train/val/test splits.
+
+    Notes
+    -----
+    Uses the original HuggingFace train+test partitions as one pool, then applies
+    a deterministic stratified split to keep all model families comparable.
+    """
+    print("[data_loader] Loading IMDB with train/val/test split …")
+    ds = load_dataset("imdb")
+    texts = list(ds["train"]["text"]) + list(ds["test"]["text"])
+    labels = list(ds["train"]["label"]) + list(ds["test"]["label"])
+    if clean:
+        texts = [clean_text(t) for t in texts]
+    split = split_train_val_test(
+        texts=texts,
+        labels=labels,
+        test_size=0.2,
+        val_size=val_size,
+        random_state=random_state,
+    )
+    print(
+        f"[data_loader] IMDB split — train: {len(split['X_train'])}, "
+        f"val: {len(split['X_val'])}, test: {len(split['X_test'])}"
+    )
+    return split
+
+
+def load_financial_phrasebank_with_val(
+    agreement: str = "sentences_allagree",
+    random_state: int = 42,
+    clean: bool = False,
+    remove_neutral: bool = True,
+    val_size: float = 0.1,
+) -> dict:
+    """
+    Load Financial PhraseBank with deterministic train/val/test splits.
+    """
+    base = load_financial_phrasebank(
+        agreement=agreement,
+        random_state=random_state,
+        clean=clean,
+        remove_neutral=remove_neutral,
+    )
+    texts = base["X_train"] + base["X_test"]
+    labels = base["y_train"] + base["y_test"]
+    split = split_train_val_test(
+        texts=texts,
+        labels=labels,
+        test_size=0.2,
+        val_size=val_size,
+        random_state=random_state,
+    )
+    print(
+        f"[data_loader] FPB split — train: {len(split['X_train'])}, "
+        f"val: {len(split['X_val'])}, test: {len(split['X_test'])}"
+    )
+    return split
 
 
 # ── Quick sanity-check ────────────────────────────────────────────────────────
