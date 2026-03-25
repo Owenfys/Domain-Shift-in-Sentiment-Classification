@@ -4,107 +4,210 @@
 
 ## Project Structure
 
-```
+```text
 nlp_project/
-├── data_loader.py      # Dataset loading & preprocessing (IMDB + Financial PhraseBank)
-├── features.py         # TF-IDF feature extraction
-├── models.py           # Classical model training (Naive Bayes, Logistic Regression)
-├── evaluate.py         # Metrics, confusion matrices, comparison plots
-├── run_classical.py    # Main experiment runner (3 experiments)
+├── data_loader.py          # Dataset loading, cleaning, and train/val/test splits
+├── features.py             # TF-IDF feature extraction for classical models
+├── models.py               # Classical model training (NB / LR)
+├── evaluate.py             # Metrics, confusion matrices, summary tables, plots
+├── result_schema.py        # Unified experiment record schema
+├── run_classical.py        # Classical experiment runner
+├── neural_features.py      # Tokenization, vocabulary, GloVe loading, dataloaders
+├── neural_models.py        # LSTM and BERT training / evaluation code
+├── run_neural.py           # Neural experiment runner
+├── run_and_log_neural.py   # Neural runner with command logging
+├── run_all.py              # Unified entrypoint for classical / neural tracks
 ├── requirements.txt
-└── outputs/            # Generated results, plots, and tables
+├── README.md
+└── outputs/                # Generated metrics, plots, and summaries
 ```
 
-## Module Overview
+## Datasets
 
-| Module | Responsibility |
-|---|---|
-| `data_loader.py` | Loads IMDB (50K reviews) and Financial PhraseBank via HuggingFace `datasets`. Cleans text, removes neutral FPB examples, provides train/test splits. |
-| `features.py` | TF-IDF vectorization with configurable n-grams, max features, and sublinear TF. Supports fit/transform and transform-only (for cross-domain). |
-| `models.py` | Trains Multinomial NB, Complement NB, and Logistic Regression with various hyperparameter configs (C values, class weighting). |
-| `evaluate.py` | Computes accuracy/precision/recall/F1, generates confusion matrix heatmaps, builds comparison tables, and produces cross-experiment bar plots. |
-| `run_classical.py` | Orchestrates the 3 experiments and generates summary visualizations. |
+We use two public datasets:
+
+- **IMDB Reviews**: 50,000 labeled movie reviews for binary sentiment classification.
+- **Financial PhraseBank (FPB)**: financial news / statement sentences with positive, neutral, and negative labels.
+
+To align FPB with binary IMDB sentiment, **neutral FPB examples are removed** and the remaining labels are remapped to binary sentiment.
+
+## Experiments
+
+We run three core experiments:
+
+1. **Experiment 1 — In-domain general sentiment (`IMDB → IMDB`)**  
+   Train, validate, and test on IMDB.
+2. **Experiment 2 — Cross-domain transfer (`IMDB → FPB`)**  
+   Train on IMDB, validate on IMDB, test on Financial PhraseBank.
+3. **Experiment 3 — In-domain financial sentiment (`FPB → FPB`)**  
+   Train, validate, and test on Financial PhraseBank.
+
+## Models
+
+### Classical baselines
+
+- **Multinomial Naive Bayes** with TF-IDF features
+- **Complement Naive Bayes** with TF-IDF features
+- **Logistic Regression** with TF-IDF features
+  - C in `{0.1, 1.0, 10.0}`
+  - with / without balanced class weights
+
+### Neural models
+
+- **LSTM + pretrained GloVe embeddings**
+- **BERT (`bert-base-uncased`) fine-tuning**
+
+## Evaluation
+
+Reported metrics include:
+
+- Accuracy
+- Precision
+- Recall
+- F1
+- Macro-F1
+
+We also generate:
+
+- Confusion matrices
+- Per-experiment comparison tables
+- Cross-domain performance-drop summaries
+- Fine-tuning improvement summaries
+
+## Reproducibility and fairness constraints
+
+- All model families use deterministic `train/val/test` splits.
+- Validation is used for hyperparameter search and early stopping.
+- Test data is used only for final evaluation.
+- For **Exp2 (`IMDB → FPB`)**, **macro-F1** is the primary metric and accuracy is secondary.
+- Neural runs use fixed seeds (default: `42 52 62`) and report **mean ± std**.
+- LSTM vocabulary is built from the training split only.
+- If GloVe is unavailable, the LSTM falls back to random initialization and records the fallback in output config.
 
 ## Setup
+
+Create / activate your Python environment, then install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Running Experiments
+## Classical experiments
+
+Run all classical experiments:
 
 ```bash
-# Run all 3 experiments + summary plots
 python run_classical.py
-
-# Run a specific experiment
-python run_classical.py --experiment 1   # In-domain: IMDB → IMDB
-python run_classical.py --experiment 2   # Cross-domain: IMDB → Financial PhraseBank
-python run_classical.py --experiment 3   # Fine-tuned: FPB → FPB
 ```
 
-### Neural experiments (LSTM + BERT)
+Run one experiment only:
 
 ```bash
-# Run all neural experiments (Exp1/2/3), 3 seeds by default
-python run_neural.py
+python run_classical.py --experiment 1   # IMDB -> IMDB
+python run_classical.py --experiment 2   # IMDB -> FPB
+python run_classical.py --experiment 3   # FPB -> FPB
+```
 
-# Run only one experiment
-python run_neural.py --experiment 2
+## Neural experiments
 
-# Run faster sanity pass (LSTM only)
-python run_neural.py --experiment 1 --skip-bert
+### Important note about GloVe
 
-# Optional unified entrypoint
+`glove.6B.100d.txt` is a large external file and **should not be committed to GitHub**.
+Download it locally, keep it outside version control, and pass its path with `--glove-path`.
+
+Typical local usage from the project root:
+
+```bash
+python run_neural.py --experiment 1 --seeds 42 --glove-path "glove.6B.100d.txt" --skip-bert
+```
+
+### Recommended execution order
+
+#### 1. Smoke test: LSTM only, one seed
+
+```bash
+python run_neural.py --experiment 1 --seeds 42 --glove-path "glove.6B.100d.txt" --skip-bert
+```
+
+#### 2. Smoke test: full neural pipeline, one seed
+
+```bash
+python run_neural.py --experiment 1 --seeds 42 --glove-path "glove.6B.100d.txt"
+python run_neural.py --experiment 2 --seeds 42 --glove-path "glove.6B.100d.txt"
+python run_neural.py --experiment 3 --seeds 42 --glove-path "glove.6B.100d.txt"
+```
+
+#### 3. Final neural runs: three seeds
+
+```bash
+python run_neural.py --experiment 1 --seeds 42 52 62 --glove-path "glove.6B.100d.txt"
+python run_neural.py --experiment 2 --seeds 42 52 62 --glove-path "glove.6B.100d.txt"
+python run_neural.py --experiment 3 --seeds 42 52 62 --glove-path "glove.6B.100d.txt"
+```
+
+### Other useful neural commands
+
+Run all neural experiments:
+
+```bash
+python run_neural.py --glove-path "glove.6B.100d.txt"
+```
+
+Run LSTM-only for all experiments:
+
+```bash
+python run_neural.py --seeds 42 52 62 --glove-path "glove.6B.100d.txt" --skip-bert
+```
+
+Run with logging:
+
+```bash
+python run_and_log_neural.py --experiment 1 --seeds 42 --glove-path "glove.6B.100d.txt"
+```
+
+Use the unified entrypoint:
+
+```bash
 python run_all.py --track all
 ```
 
-Optional GloVe path (plain text vectors):
+## Resource strategy
 
-```bash
-python run_neural.py --glove-path "/path/to/glove.6B.100d.txt"
-```
-
-## Experiments
-
-1. **Experiment 1 — In-Domain (IMDB → IMDB):** Baseline performance on general sentiment.
-2. **Experiment 2 — Cross-Domain (IMDB → Financial PhraseBank):** Measures domain shift degradation.
-3. **Experiment 3 — Fine-Tuned (FPB → FPB):** In-domain financial performance to compare against cross-domain.
-
-## Classical Model Variants Tested
-
-- **Multinomial Naive Bayes** (alpha=1.0)
-- **Complement Naive Bayes** (alpha=1.0)
-- **Logistic Regression** — C ∈ {0.1, 1.0, 10.0}, with and without balanced class weights
+- BERT hyperparameter search is performed on **Exp1** first.
+- The selected BERT setting is then reused for **Exp2** and **Exp3**.
+- For quick debugging, start with `--seeds 42` before running all three seeds.
+- If BERT download or initialization fails, use `--skip-bert` to validate the full LSTM pipeline first.
 
 ## Outputs
 
-After running, `outputs/` will contain:
-- `exp{1,2,3}_comparison.csv` — per-experiment metrics tables
-- `exp{1,2,3}_cm_*.png` — confusion matrices for each model/experiment
-- `exp{1,2,3}_results.json` — raw metrics in JSON
-- `summary_all_experiments.csv` — combined F1 comparison + domain shift drop
-- `summary_performance_drop.png` — bar chart of in-domain vs cross-domain F1
-- `summary_finetune_improvement.png` — bar chart of cross-domain vs fine-tuned F1
+### Classical outputs (`outputs/`)
 
-Neural outputs are written under `outputs/neural/`:
-- `exp1|exp2|exp3/records.json` — unified per-seed records
-- `exp1|exp2|exp3/raw_metrics_by_seed.csv`
-- `exp1|exp2|exp3/summary_mean_std.csv`
-- `all_records.json`, `all_summary_mean_std.csv`
-- `best_bert_hparams.json` (selected from Exp1 val set)
+- `exp{1,2,3}_comparison.csv` — metrics tables by experiment
+- `exp{1,2,3}_cm_*.png` — confusion matrices
+- `exp{1,2,3}_results.json` — raw metrics
+- `summary_all_experiments.csv` — combined summary
+- `summary_performance_drop.png` — in-domain vs cross-domain comparison
+- `summary_finetune_improvement.png` — cross-domain vs fine-tuned comparison
 
-## Reproducibility and fairness constraints
+### Neural outputs (`outputs/neural/`)
 
-- All model families use deterministic `train/val/test` splits.
-- Validation set is used for hyperparameter search and early stopping.
-- Test set is evaluated only once per run.
-- Exp2 (`IMDB→FPB`) primary metric is `macro-F1`; accuracy is secondary.
-- Neural runs use fixed seeds (default: 42, 52, 62) and report `mean ± std`.
-- LSTM vocabulary is built from train split only; OOV rates are logged.
+- `exp1/`, `exp2/`, `exp3/`
+- `records.json` — unified per-seed records
+- `raw_metrics_by_seed.csv`
+- `summary_mean_std.csv`
+- `all_records.json`
+- `all_summary_mean_std.csv`
+- `best_bert_hparams.json`
 
-## Resource strategy and fallback
+## Git / repository notes
 
-- BERT hyperparameter search is performed on Exp1, then best config is reused for Exp2/Exp3.
-- If BERT download fails (network/proxy), run `--skip-bert` first to validate the full LSTM pipeline.
-- If GloVe file is unavailable, LSTM falls back to random initialization and marks fallback in output config.
+Recommended `.gitignore` entries:
+
+```gitignore
+__pycache__/
+*.pyc
+outputs/
+glove.6B.100d.txt
+```
+
+Do **not** upload large pretrained files such as `glove.6B.100d.txt` to GitHub. Keep them local and document the download / path instead.
