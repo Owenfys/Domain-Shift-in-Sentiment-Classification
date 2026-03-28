@@ -1,4 +1,47 @@
+# ===== Core large/local files =====
 glove.6B.100d.txt
+glove.6B.*
+*.zip
+
+# ===== Python =====
 __pycache__/
-*.pyc
-outputs/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# ===== Virtual env / conda =====
+.venv/
+venv/
+env/
+ENV/
+conda-meta/
+
+# ===== Hugging Face / cache =====
+.cache/
+huggingface/
+hf_cache/
+
+# ===== Logs / temp =====
+*.log
+neural_training_log.txt
+粘贴的文本*.txt
+
+# ===== OS / editor =====
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ===== screenshots / local images =====
+截屏*.png
+
+# ===== Optional model artifacts / heavy binaries =====
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+$null
+python

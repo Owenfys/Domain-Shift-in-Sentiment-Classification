@@ -1,0 +1,3 @@
+experiment,domain_setup,model,accuracy_mean,accuracy_std,precision_mean,precision_std,recall_mean,recall_std,f1_mean,f1_std,macro_f1_mean,macro_f1_std
+Exp1,IMDB->IMDB,BERT_base,0.9236,0.0025,0.9207,0.0122,0.9273,0.0125,0.9239,0.0023,0.9236,0.0025
+Exp1,IMDB->IMDB,LSTM_GloVe,0.8945,0.0018,0.8841,0.0163,0.9088,0.0225,0.896,0.0032,0.896,0.0032

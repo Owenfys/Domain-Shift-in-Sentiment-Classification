@@ -1,0 +1,6 @@
+{
+  "learning_rate": 2e-05,
+  "batch_size": 8,
+  "num_train_epochs": 3,
+  "val_macro_f1": 0.922583497898412
+}

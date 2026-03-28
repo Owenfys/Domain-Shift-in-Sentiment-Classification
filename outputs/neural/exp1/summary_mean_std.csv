@@ -1,2 +1,0 @@
-experiment,domain_setup,model,accuracy_mean,accuracy_std,precision_mean,precision_std,recall_mean,recall_std,f1_mean,f1_std,macro_f1_mean,macro_f1_std
-Exp1,IMDB->IMDB,LSTM_GloVe,0.8996,,0.9012,,0.8976,,0.8994,,0.8994,
